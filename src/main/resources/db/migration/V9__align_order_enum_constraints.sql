@@ -1,0 +1,17 @@
+BEGIN;
+
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_type_check;
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+
+ALTER TABLE orders
+  ADD CONSTRAINT orders_type_check
+  CHECK (type IN ('DATA_RETRIEVAL','RECYCLE'));
+
+ALTER TABLE orders
+  ADD CONSTRAINT orders_status_check
+  CHECK (status IN ('CREATED','PROCESSING','FULFILLED','RESTORED','CANCELLED'));
+
+ALTER TABLE orders
+  ALTER COLUMN status SET DEFAULT 'CREATED';
+
+COMMIT;

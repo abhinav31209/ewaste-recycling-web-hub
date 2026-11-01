@@ -1,0 +1,18 @@
+package com.team04.ewaste.device;
+
+public enum DeviceWorkflowStatus {
+
+    SUBMITTED,
+    PENDING_REVIEW,
+    UNDER_REVIEW,
+    RECYCLE_APPROVED,
+    DATA_WIPE_PENDING,
+    DATA_WIPE_COMPLETED,
+    RETRIEVAL_AVAILABLE,
+    RETRIEVAL_REQUESTED,
+    RETRIEVAL_PAID,
+    RETRIEVAL_FULFILLED,
+    PUBLISHED,
+    HIDDEN
+
+}

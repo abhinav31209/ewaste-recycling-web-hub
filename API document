@@ -1,0 +1,1920 @@
+# eWaste Hub Backend API Documentation
+
+## 1. Overview
+
+This document describes the backend REST APIs for the eWaste Hub project.
+
+The API routes are defined by Spring Boot Controllers using class-level and method-level mappings, such as @RequestMapping, @GetMapping, @PostMapping, @PutMapping, and @PatchMapping.
+
+Example:
+
+Class-level mapping:
+@RequestMapping("/api/auth")
+
+Method-level mapping:
+@PostMapping("/login")
+
+Final endpoint:
+POST /api/auth/login
+
+The backend uses session-based authentication. After successful login, the backend stores the Spring Security context in the HTTP session. Frontend requests should include cookies using credentials: "include".
+
+Default local test accounts are automatically created by AdminSeeder if they do not already exist:
+
+ADMIN:
+Email: admin@test.com
+Password: admin123
+
+OWNER:
+Email: owner@test.com
+Password: 123456
+
+STAFF:
+Email: staff@test.com
+Password: 123456
+
+
+==================================================
+2. AUTH API
+==================================================
+
+Base path:
+/api/auth
+
+--------------------------------------------------
+2.1 Register
+--------------------------------------------------
+
+Endpoint:
+POST /api/auth/register
+
+Description:
+Registers a new user.
+
+Request body:
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+Validation:
+email: string, required, not blank
+password: string, required, not blank
+
+Response body:
+{
+  "success": true,
+  "message": "Registration success",
+  "userId": "USER_UUID",
+  "email": "user@example.com",
+  "role": "OWNER"
+}
+
+Possible failed response:
+{
+  "success": false,
+  "message": "Email already exists",
+  "userId": null,
+  "email": null,
+  "role": null
+}
+
+
+--------------------------------------------------
+2.2 Login
+--------------------------------------------------
+
+Endpoint:
+POST /api/auth/login
+
+Description:
+Logs in a user and creates a session.
+
+Request body:
+{
+  "email": "owner@test.com",
+  "password": "123456"
+}
+
+Response body:
+{
+  "success": true,
+  "message": "Login success",
+  "userId": "USER_UUID",
+  "email": "owner@test.com",
+  "role": "OWNER"
+}
+
+Frontend example:
+await fetch("/api/auth/login", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  credentials: "include",
+  body: JSON.stringify({
+    email: "owner@test.com",
+    password: "123456"
+  })
+});
+
+
+--------------------------------------------------
+2.3 Get Current User
+--------------------------------------------------
+
+Endpoint:
+GET /api/auth/me
+
+Description:
+Returns the currently authenticated user.
+
+Success response:
+{
+  "success": true,
+  "message": "Authenticated user",
+  "userId": "USER_UUID",
+  "email": "user@example.com",
+  "role": "OWNER"
+}
+
+Not authenticated response:
+HTTP 401 Unauthorized
+
+{
+  "success": false,
+  "message": "Not authenticated",
+  "userId": null,
+  "email": null,
+  "role": null
+}
+
+
+--------------------------------------------------
+2.4 Logout
+--------------------------------------------------
+
+Endpoint:
+POST /api/auth/logout
+
+Description:
+Logs out the current user by invalidating the session.
+
+Response body:
+{
+  "success": true,
+  "message": "Logout success",
+  "userId": null,
+  "email": null,
+  "role": null
+}
+
+
+==================================================
+3. OWNER DEVICE API
+==================================================
+
+Base path:
+/api/owner/devices
+
+Role:
+OWNER / ADMIN
+
+--------------------------------------------------
+3.1 Submit Device
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/devices
+
+Description:
+Allows an owner to submit a device. The backend gets the owner from the authenticated session, so the frontend does not need to send userId.
+
+Request body:
+{
+  "deviceName": "iPhone 12",
+  "brand": "Apple",
+  "condition": "GOOD",
+  "deviceType": "PHONE"
+}
+
+Validation:
+deviceName: string, required, not blank
+brand: string, optional
+condition: string, optional
+deviceType: DeviceType, optional
+
+Response body:
+{
+  "id": "DEVICE_UUID",
+  "deviceName": "iPhone 12",
+  "brand": "Apple",
+  "condition": "GOOD",
+  "deviceType": "PHONE",
+  "classification": "UNKNOWN",
+  "workflowStatus": "SUBMITTED",
+  "dataWipeStatus": "PENDING",
+  "dataWipeCompletedAt": null,
+  "dataWipeCompletedBy": null,
+  "retrievalAvailable": false,
+  "retrievalAvailableAt": null,
+  "retrievalAvailableUntil": null,
+  "statusLabel": "Submitted",
+  "resultMessage": "Your device has been submitted and is waiting for review.",
+  "createdAt": "2026-05-06T10:30:00Z",
+  "updatedAt": "2026-05-06T10:30:00Z"
+}
+
+
+--------------------------------------------------
+3.2 List My Devices
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/devices
+
+Description:
+Returns all devices submitted by the currently authenticated owner.
+
+Response body:
+[
+  {
+    "id": "DEVICE_UUID",
+    "deviceName": "iPhone 12",
+    "brand": "Apple",
+    "condition": "GOOD",
+    "deviceType": "PHONE",
+    "classification": "UNKNOWN",
+    "workflowStatus": "SUBMITTED",
+    "dataWipeStatus": "PENDING",
+    "dataWipeCompletedAt": null,
+    "dataWipeCompletedBy": null,
+    "retrievalAvailable": false,
+    "retrievalAvailableAt": null,
+    "retrievalAvailableUntil": null,
+    "statusLabel": "Submitted",
+    "resultMessage": "Your device has been submitted and is waiting for review.",
+    "createdAt": "2026-05-06T10:30:00Z",
+    "updatedAt": "2026-05-06T10:30:00Z"
+  }
+]
+
+
+--------------------------------------------------
+3.3 Get My Device By ID
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/devices/{id}
+
+Path parameters:
+id: UUID, required, device ID
+
+Description:
+Returns a single device that belongs to the currently authenticated owner.
+
+Response body:
+{
+  "id": "DEVICE_UUID",
+  "deviceName": "iPhone 12",
+  "brand": "Apple",
+  "condition": "GOOD",
+  "deviceType": "PHONE",
+  "classification": "UNKNOWN",
+  "workflowStatus": "SUBMITTED",
+  "dataWipeStatus": "PENDING",
+  "dataWipeCompletedAt": null,
+  "dataWipeCompletedBy": null,
+  "retrievalAvailable": false,
+  "retrievalAvailableAt": null,
+  "retrievalAvailableUntil": null,
+  "statusLabel": "Submitted",
+  "resultMessage": "Your device has been submitted and is waiting for review.",
+  "createdAt": "2026-05-06T10:30:00Z",
+  "updatedAt": "2026-05-06T10:30:00Z"
+}
+
+
+==================================================
+4. LEGACY DEVICE API
+==================================================
+
+Base path:
+/api/devices
+
+Note:
+This is the older device API. The newer Owner Device API is preferred because it uses the authenticated user instead of requiring userId from the frontend.
+
+--------------------------------------------------
+4.1 Submit Device
+--------------------------------------------------
+
+Endpoint:
+POST /api/devices
+
+Request body:
+{
+  "userId": "USER_UUID",
+  "deviceName": "iPhone 12",
+  "brand": "Apple",
+  "condition": "GOOD"
+}
+
+Validation:
+userId: UUID, required, not null
+deviceName: string, required, not blank
+brand: string, optional
+condition: string, optional
+
+Response body:
+Returns Device.
+
+
+--------------------------------------------------
+4.2 List Devices By User ID
+--------------------------------------------------
+
+Endpoint:
+GET /api/devices?userId={userId}
+
+Query parameters:
+userId: UUID, required, user ID
+
+Response body:
+Returns List<Device>.
+
+
+==================================================
+5. OWNER ORDER API
+==================================================
+
+Base path:
+/api/owner
+
+Role:
+OWNER / ADMIN
+
+--------------------------------------------------
+5.1 Create Data Retrieval Order
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/devices/{deviceId}/orders/data-retrieval
+
+Path parameters:
+deviceId: UUID, required, device ID
+
+Request body:
+None
+
+Description:
+Creates a data retrieval order for the specified device.
+
+Response body:
+Returns Order.
+
+
+--------------------------------------------------
+5.2 List My Orders
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/orders
+
+Description:
+Returns all orders that belong to the currently authenticated owner.
+
+Response body:
+Returns List<Order>.
+
+
+--------------------------------------------------
+5.3 Get My Order By ID
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/orders/{orderId}
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Response body:
+Returns Order.
+
+
+--------------------------------------------------
+5.4 Get Secure Link
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/orders/{orderId}/secure-link
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Description:
+Returns the secure link for an owner order.
+
+Response body:
+{
+  "secureLink": "https://example.com/secure/download-token"
+}
+
+
+--------------------------------------------------
+5.5 Restore Order
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/orders/{orderId}/restore
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Request body:
+None
+
+Response body:
+Returns Order.
+
+
+==================================================
+6. OWNER PAYMENT API
+==================================================
+
+Base paths:
+/api/owner/payments
+/api/owner/orders/{orderId}/payment-quote
+
+Role:
+OWNER / ADMIN
+
+Important security rule:
+Owners can create payments and cancel their own pending payments.
+Owners cannot mark their own payments as SUCCEEDED.
+Successful payment confirmation must be performed by STAFF or ADMIN.
+
+--------------------------------------------------
+6.1 List Payment Providers
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/payments/providers
+
+Response body:
+[
+  {
+    "code": "stripe",
+    "name": "Stripe",
+    "mode": "sandbox",
+    "enabled": true
+  },
+  {
+    "code": "paypal",
+    "name": "PayPal",
+    "mode": "sandbox",
+    "enabled": true
+  }
+]
+
+
+--------------------------------------------------
+6.2 Get Payment Quote
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/orders/{orderId}/payment-quote
+
+Optional query:
+GET /api/owner/orders/{orderId}/payment-quote?storageExtension=true
+
+Response body:
+{
+  "orderId": "ORDER_UUID",
+  "item": "Data retrieval payment",
+  "amount": 24.99,
+  "currency": "GBP",
+  "explanation": "Data retrieval fee for this order.",
+  "priceBreakdown": {
+    "baseFee": 19.99,
+    "storageFee": 5.00
+  }
+}
+
+
+--------------------------------------------------
+6.3 Create Sandbox Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/payments
+
+Request body:
+{
+  "provider": "stripe",
+  "amount": 24.99,
+  "currency": "GBP",
+  "orderId": "ORDER_UUID",
+  "description": "Data retrieval payment",
+  "autoSucceed": false,
+  "returnUrl": "http://localhost:5173/payments/success",
+  "cancelUrl": "http://localhost:5173/payments/cancel",
+  "metadata": {
+    "type": "data_retrieval"
+  }
+}
+
+Validation:
+provider: string, required, not blank
+amount: BigDecimal, required, not null, minimum 0.01
+currency: string, optional
+orderId: UUID, optional
+description: string, optional
+autoSucceed: boolean, optional
+returnUrl: string, optional
+cancelUrl: string, optional
+metadata: object, optional
+
+Response body:
+{
+  "id": "PAYMENT_UUID",
+  "userId": "USER_UUID",
+  "orderId": "ORDER_UUID",
+  "provider": "stripe",
+  "providerIntentId": "pi_sandbox_xxx",
+  "checkoutUrl": "http://localhost:8080/sandbox/checkout/PAYMENT_UUID",
+  "amount": 24.99,
+  "refundedAmount": 0,
+  "currency": "GBP",
+  "status": "initiated",
+  "description": "Data retrieval payment",
+  "failureReason": null,
+  "metadata": {
+    "type": "data_retrieval"
+  },
+  "createdAt": "2026-05-06T10:30:00Z",
+  "updatedAt": "2026-05-06T10:30:00Z",
+  "paidAt": null,
+  "refundedAt": null
+}
+
+
+--------------------------------------------------
+6.4 Simulate Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/payments/simulate
+
+Request body:
+Same as POST /api/owner/payments.
+
+Security note:
+If an owner attempts to complete their own payment as successful, the backend should return:
+
+HTTP 403 Forbidden
+
+
+--------------------------------------------------
+6.5 Owner Capture Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/payments/{paymentId}/capture
+
+Path parameters:
+paymentId: UUID, required, payment ID
+
+Security note:
+Owners are not allowed to mark their own payments as succeeded.
+This endpoint should return:
+
+HTTP 403 Forbidden
+
+
+--------------------------------------------------
+6.6 Cancel Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/owner/payments/{paymentId}/cancel
+
+Path parameters:
+paymentId: UUID, required, payment ID
+
+Request body:
+None
+
+Description:
+Cancels the owner’s own pending payment.
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+6.7 List My Payments
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/payments
+
+Response body:
+Returns List<PaymentResponse>.
+
+
+--------------------------------------------------
+6.8 List Payments For Order
+--------------------------------------------------
+
+Endpoint:
+GET /api/owner/orders/{orderId}/payments
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Response body:
+Returns List<PaymentResponse>.
+
+
+==================================================
+7. STAFF DEVICE API
+==================================================
+
+Base path:
+/api/staff/devices
+
+Role:
+STAFF / ADMIN
+
+--------------------------------------------------
+7.1 Get Unknown Device Queue
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/devices/unknown
+
+Description:
+Returns devices classified as UNKNOWN and requiring staff review.
+
+Response body:
+[
+  {
+    "id": "DEVICE_UUID",
+    "userId": "USER_UUID",
+    "deviceName": "iPhone 12",
+    "brand": "Apple",
+    "condition": "GOOD",
+    "deviceType": "PHONE",
+    "classification": "UNKNOWN",
+    "workflowStatus": "SUBMITTED",
+    "dataWipeStatus": "PENDING",
+    "dataWipeCompletedAt": null,
+    "dataWipeCompletedBy": null,
+    "retrievalAvailable": false,
+    "retrievalAvailableAt": null,
+    "retrievalAvailableUntil": null,
+    "createdAt": "2026-05-06T10:30:00Z",
+    "updatedAt": "2026-05-06T10:30:00Z"
+  }
+]
+
+
+--------------------------------------------------
+7.2 Get Hidden / Draft Devices
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/devices/hidden
+
+Response body:
+Returns List<DeviceResponse>.
+
+
+--------------------------------------------------
+7.3 Get Recycle Processing Queue
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/devices/recycle-processing
+
+Response body:
+Returns List<DeviceResponse>.
+
+
+--------------------------------------------------
+7.4 Update Device
+--------------------------------------------------
+
+Endpoint:
+PUT /api/staff/devices/{id}
+
+Path parameters:
+id: UUID, required, device ID
+
+Request body:
+{
+  "deviceName": "iPhone 12",
+  "brand": "Apple",
+  "condition": "GOOD",
+  "deviceType": "PHONE"
+}
+
+Validation:
+deviceName: string, optional, max 100
+brand: string, optional, max 50
+condition: string, optional, max 30
+deviceType: DeviceType, optional
+
+Response body:
+Returns DeviceResponse.
+
+
+--------------------------------------------------
+7.5 Reclassify Device
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/devices/{id}/reclassify
+
+Path parameters:
+id: UUID, required, device ID
+
+Request body:
+{
+  "classification": "RECYCLE"
+}
+
+Validation:
+classification: DeviceClassification, required, not null
+
+Common classification values:
+CURRENT
+RECYCLE
+RARE
+UNKNOWN
+UNWANTED
+
+Response body:
+Returns DeviceResponse.
+
+
+--------------------------------------------------
+7.6 Publish Device
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/devices/{id}/publish
+
+Request body:
+None
+
+Response body:
+Returns DeviceResponse.
+
+
+--------------------------------------------------
+7.7 Hide Device
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/devices/{id}/hide
+
+Request body:
+None
+
+Response body:
+Returns DeviceResponse.
+
+
+--------------------------------------------------
+7.8 Mark Data Wipe Complete
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/devices/{id}/data-wipe/complete
+
+Request body:
+None
+
+Description:
+Marks the data wipe as completed. The backend records the current staff user from authentication.
+
+Response body:
+Returns DeviceResponse.
+
+
+==================================================
+8. STAFF CLASSIFICATION API
+==================================================
+
+Base path:
+/api/staff/devices
+
+Role:
+STAFF / ADMIN
+
+--------------------------------------------------
+8.1 Get Classification Result
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/devices/{id}/classification-result
+
+Path parameters:
+id: UUID, required, device ID
+
+Response body:
+{
+  "classification": "RECYCLE",
+  "route": "Recycling flow",
+  "message": "This device should be processed through recycling.",
+  "platform": null,
+  "estimatedValue": null,
+  "listingUrl": null,
+  "qrToken": "QR_TOKEN_HERE",
+  "voucherCode": null,
+  "referralCode": null,
+  "followUpStatus": null,
+  "ownerContacted": false,
+  "staffNote": null,
+  "deviceType": "PHONE",
+  "details": "Screen works, battery condition unknown.",
+  "visibility": "VISIBLE",
+  "workflowStatus": "PUBLISHED"
+}
+
+Classification routes:
+CURRENT: Trade-in platform recommendation
+RECYCLE: Recycling flow
+RARE: Collector market suggestion
+UNKNOWN: Requires staff follow-up
+UNWANTED: Unwanted device handling
+
+
+--------------------------------------------------
+8.2 Update Follow-up
+--------------------------------------------------
+
+Endpoint:
+PATCH /api/staff/devices/{id}/follow-up
+
+Request body:
+{
+  "followUpStatus": "CONTACTED",
+  "ownerContacted": true,
+  "staffNote": "Owner has been contacted for more information."
+}
+
+Response body:
+Follow-up updated
+
+
+--------------------------------------------------
+8.3 Update Device Details
+--------------------------------------------------
+
+Endpoint:
+PUT /api/staff/devices/{id}/details
+
+Request body:
+{
+  "deviceName": "iPhone 12",
+  "brand": "Apple",
+  "condition": "GOOD",
+  "details": "Screen works, battery condition unknown.",
+  "deviceType": "PHONE",
+  "staffNote": "Checked manually by staff."
+}
+
+Response body:
+Device details updated
+
+
+--------------------------------------------------
+8.4 Update Device Visibility
+--------------------------------------------------
+
+Endpoint:
+PATCH /api/staff/devices/{id}/visibility
+
+Request body:
+{
+  "visibility": "VISIBLE"
+}
+
+Common visibility values:
+DRAFT
+VISIBLE
+HIDDEN
+
+Response body:
+Device visibility updated
+
+
+==================================================
+9. STAFF DATA ERASURE API
+==================================================
+
+Base path:
+/api/staff/devices/{deviceId}/data-erasure
+
+Role:
+STAFF / ADMIN
+
+--------------------------------------------------
+9.1 Create Data Erasure Record
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/devices/{deviceId}/data-erasure
+
+Path parameters:
+deviceId: UUID, required, device ID
+
+Request body:
+None
+
+Response body:
+{
+  "id": "ERASURE_RECORD_UUID",
+  "deviceId": "DEVICE_UUID",
+  "ownerId": "OWNER_UUID",
+  "status": "REQUESTED",
+  "erasureProvider": "string",
+  "certificateCode": null,
+  "staffNote": null,
+  "requestedAt": "2026-05-06T10:30:00Z",
+  "completedAt": null
+}
+
+
+--------------------------------------------------
+9.2 Get Data Erasure Record
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/devices/{deviceId}/data-erasure
+
+Response body:
+{
+  "id": "ERASURE_RECORD_UUID",
+  "deviceId": "DEVICE_UUID",
+  "ownerId": "OWNER_UUID",
+  "status": "REQUESTED",
+  "erasureProvider": "string",
+  "certificateCode": null,
+  "staffNote": null,
+  "requestedAt": "2026-05-06T10:30:00Z",
+  "completedAt": null
+}
+
+
+--------------------------------------------------
+9.3 Update Data Erasure Status
+--------------------------------------------------
+
+Endpoint:
+PATCH /api/staff/devices/{deviceId}/data-erasure/status
+
+Request body:
+{
+  "status": "COMPLETED",
+  "certificateCode": "CERT-2026-001",
+  "staffNote": "Data erasure completed successfully."
+}
+
+Response body:
+{
+  "id": "ERASURE_RECORD_UUID",
+  "deviceId": "DEVICE_UUID",
+  "ownerId": "OWNER_UUID",
+  "status": "COMPLETED",
+  "erasureProvider": "string",
+  "certificateCode": "CERT-2026-001",
+  "staffNote": "Data erasure completed successfully.",
+  "requestedAt": "2026-05-06T10:30:00Z",
+  "completedAt": "2026-05-06T11:00:00Z"
+}
+
+
+==================================================
+10. STAFF ORDER API
+==================================================
+
+Base path:
+/api/staff/orders
+
+Role:
+STAFF / ADMIN
+
+--------------------------------------------------
+10.1 List Orders
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/orders
+
+Description:
+Returns all orders sorted by createdAt descending.
+
+Response body:
+Returns List<Order>.
+
+
+--------------------------------------------------
+10.2 Fulfill Order
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/orders/{orderId}/fulfill
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Request body:
+None
+
+Response body:
+Returns Order.
+
+
+--------------------------------------------------
+10.3 Delete Expired Data
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/orders/{orderId}/delete-data
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Request body:
+None
+
+Response body:
+Returns Order.
+
+
+==================================================
+11. STAFF PAYMENT API
+==================================================
+
+Base path:
+/api/staff/payments
+
+Role:
+STAFF / ADMIN
+
+--------------------------------------------------
+11.1 Search Payments
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/payments
+
+Query parameters:
+status: string, optional, payment status
+provider: string, optional, stripe or paypal
+from: Instant, optional, start time
+to: Instant, optional, end time
+
+Example:
+GET /api/staff/payments?status=succeeded&provider=stripe
+
+Response body:
+Returns List<PaymentResponse>.
+
+
+--------------------------------------------------
+11.2 Get Payment By ID
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/payments/{paymentId}
+
+Path parameters:
+paymentId: UUID, required, payment ID
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+11.3 List Payments For Order
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/payments/order/{orderId}
+
+Path parameters:
+orderId: UUID, required, order ID
+
+Response body:
+Returns List<PaymentResponse>.
+
+
+--------------------------------------------------
+11.4 Capture Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/payments/{paymentId}/capture
+
+Description:
+Confirms sandbox payment success.
+
+Request body:
+None
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+11.5 Fail Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/payments/{paymentId}/fail
+
+Optional query:
+POST /api/staff/payments/{paymentId}/fail?reason=Card declined in sandbox
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+11.6 Refund Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/staff/payments/{paymentId}/refund
+
+Request body:
+{
+  "amount": 5.00,
+  "reason": "Partial refund in sandbox"
+}
+
+Validation:
+amount: BigDecimal, optional, minimum 0.01 if provided
+reason: string, optional
+
+If body is omitted, the service may treat it as a full refund.
+
+Response body:
+Returns PaymentResponse.
+
+
+==================================================
+12. STAFF REFERRAL FEE API
+==================================================
+
+Base path:
+/api/staff/reports/referral-fees
+
+Role:
+STAFF / ADMIN
+
+--------------------------------------------------
+12.1 Get All Referral Fees
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/reports/referral-fees
+
+Response body:
+[
+  {
+    "id": "REFERRAL_UUID",
+    "deviceId": "DEVICE_UUID",
+    "ownerId": "OWNER_UUID",
+    "deviceName": "iPhone 12",
+    "thirdPartyName": "Trade-in Partner",
+    "referralCode": "REF-ABC123",
+    "referralUrl": "https://partner.example.com/ref/REF-ABC123",
+    "estimatedFee": 12.50,
+    "status": "PENDING",
+    "createdAt": "2026-05-06T10:30:00Z",
+    "confirmedAt": null,
+    "paidAt": null
+  }
+]
+
+
+--------------------------------------------------
+12.2 Get Referral Fees By Device
+--------------------------------------------------
+
+Endpoint:
+GET /api/staff/reports/referral-fees/device/{deviceId}
+
+Path parameters:
+deviceId: UUID, required, device ID
+
+Response body:
+Returns List<ReferralFeeResponse>.
+
+
+--------------------------------------------------
+12.3 Update Referral Fee Status
+--------------------------------------------------
+
+Endpoint:
+PATCH /api/staff/reports/referral-fees/{referralId}/status
+
+Path parameters:
+referralId: UUID, required, referral fee ID
+
+Request body:
+{
+  "status": "PAID"
+}
+
+Response body:
+{
+  "id": "REFERRAL_UUID",
+  "deviceId": "DEVICE_UUID",
+  "ownerId": "OWNER_UUID",
+  "deviceName": "iPhone 12",
+  "thirdPartyName": "Trade-in Partner",
+  "referralCode": "REF-ABC123",
+  "referralUrl": "https://partner.example.com/ref/REF-ABC123",
+  "estimatedFee": 12.50,
+  "status": "PAID",
+  "createdAt": "2026-05-06T10:30:00Z",
+  "confirmedAt": "2026-05-06T11:00:00Z",
+  "paidAt": "2026-05-06T11:30:00Z"
+}
+
+
+==================================================
+13. ADMIN DEVICE / DASHBOARD / REPORT API
+==================================================
+
+Base path:
+/api/admin
+
+Role:
+ADMIN
+
+--------------------------------------------------
+13.1 Get All Devices
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/devices
+
+Description:
+Returns all devices sorted by id descending.
+
+Response body:
+Returns List<Device>.
+
+
+--------------------------------------------------
+13.2 Classify Device
+--------------------------------------------------
+
+Endpoint:
+PUT /api/admin/device/{id}/classify
+
+Path parameters:
+id: UUID, required, device ID
+
+Request body:
+{
+  "classification": "RECYCLE"
+}
+
+Common classification values:
+CURRENT
+RECYCLE
+RARE
+UNKNOWN
+UNWANTED
+
+Response body:
+Returns Device.
+
+
+--------------------------------------------------
+13.3 Get Admin Dashboard
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/dashboard
+
+Response body:
+{
+  "totalUsers": 10,
+  "activeUsers": 8,
+  "disabledUsers": 2,
+  "totalDevices": 30,
+  "currentDevices": 12,
+  "recycleDevices": 10,
+  "rareDevices": 3,
+  "unknownDevices": 4,
+  "unwantedDevices": 1,
+  "submittedDevices": 6,
+  "underReviewDevices": 4,
+  "publishedDevices": 15,
+  "hiddenDevices": 5,
+  "draftDevices": 7,
+  "visibleDevices": 18,
+  "hiddenVisibilityDevices": 5
+}
+
+
+--------------------------------------------------
+13.4 Get Device Processing Report
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/reports/device-processing
+
+Response body:
+{
+  "totalDevices": 30,
+  "currentDevices": 12,
+  "recycleDevices": 10,
+  "rareDevices": 3,
+  "unknownDevices": 4,
+  "unwantedDevices": 1,
+  "submittedDevices": 6,
+  "underReviewDevices": 4,
+  "publishedDevices": 15,
+  "hiddenDevices": 5,
+  "draftDevices": 7,
+  "visibleDevices": 18,
+  "hiddenVisibilityDevices": 5
+}
+
+
+==================================================
+14. ADMIN USER API
+==================================================
+
+Base path:
+/api/admin/users
+
+Role:
+ADMIN
+
+--------------------------------------------------
+14.1 Get All Users
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/users
+
+Response body:
+[
+  {
+    "id": "USER_UUID",
+    "email": "owner@test.com",
+    "role": "OWNER",
+    "status": "active"
+  },
+  {
+    "id": "USER_UUID",
+    "email": "staff@test.com",
+    "role": "STAFF",
+    "status": "active"
+  }
+]
+
+
+--------------------------------------------------
+14.2 Get User By ID
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/users/{id}
+
+Path parameters:
+id: UUID, required, user ID
+
+Response body:
+{
+  "id": "USER_UUID",
+  "email": "owner@test.com",
+  "role": "OWNER",
+  "status": "active"
+}
+
+
+--------------------------------------------------
+14.3 Update User Role
+--------------------------------------------------
+
+Endpoint:
+PUT /api/admin/users/{id}/role
+
+Request body:
+{
+  "role": "STAFF"
+}
+
+Validation:
+role: Role, required, not null
+
+Common role values:
+OWNER
+STAFF
+ADMIN
+
+Response body:
+Returns UserResponse.
+
+
+--------------------------------------------------
+14.4 Update User Status
+--------------------------------------------------
+
+Endpoint:
+PUT /api/admin/users/{id}/status
+
+Request body:
+{
+  "status": "disabled"
+}
+
+Validation:
+status: string, required, not blank
+
+Common status values:
+active
+disabled
+
+Response body:
+Returns UserResponse.
+
+
+==================================================
+15. ADMIN PAYMENT API
+==================================================
+
+Base path:
+/api/admin
+
+Role:
+ADMIN
+
+--------------------------------------------------
+15.1 Search Payments
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/payments
+
+Query parameters:
+status: string, optional, payment status
+provider: string, optional, stripe or paypal
+from: Instant, optional, start time
+to: Instant, optional, end time
+
+Response body:
+Returns List<PaymentResponse>.
+
+
+--------------------------------------------------
+15.2 Get Payment By ID
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/payments/{paymentId}
+
+Path parameters:
+paymentId: UUID, required, payment ID
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+15.3 Get Payments Report
+--------------------------------------------------
+
+Endpoint:
+GET /api/admin/reports/payments
+
+Response body:
+{
+  "totalPayments": 10,
+  "initiatedPayments": 3,
+  "succeededPayments": 5,
+  "failedPayments": 1,
+  "refundedPayments": 1,
+  "totalAmount": 249.90,
+  "succeededAmount": 124.95
+}
+
+
+--------------------------------------------------
+15.4 Capture Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/admin/payments/{paymentId}/capture
+
+Request body:
+None
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+15.5 Fail Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/admin/payments/{paymentId}/fail
+
+Optional query:
+POST /api/admin/payments/{paymentId}/fail?reason=Card declined in sandbox
+
+Response body:
+Returns PaymentResponse.
+
+
+--------------------------------------------------
+15.6 Refund Payment
+--------------------------------------------------
+
+Endpoint:
+POST /api/admin/payments/{paymentId}/refund
+
+Request body:
+{
+  "amount": 5.00,
+  "reason": "Partial refund in sandbox"
+}
+
+Response body:
+Returns PaymentResponse.
+
+
+==================================================
+16. QR API
+==================================================
+
+Base path:
+/api/qr
+
+--------------------------------------------------
+16.1 Generate QR Token
+--------------------------------------------------
+
+Endpoint:
+POST /api/qr/devices/{deviceId}/token
+
+Path parameters:
+deviceId: UUID, required, device ID
+
+Response body:
+{
+  "token": "QR_TOKEN_HERE",
+  "expiresAt": "2026-05-06T12:30:00"
+}
+
+
+--------------------------------------------------
+16.2 Resolve QR Token
+--------------------------------------------------
+
+Endpoint:
+GET /api/qr/{token}
+
+Path parameters:
+token: string, required, QR token
+
+Response body:
+{
+  "deviceId": "DEVICE_UUID",
+  "brand": "Apple",
+  "deviceName": "iPhone 12",
+  "condition": "GOOD",
+  "classification": "RECYCLE",
+  "workflowStatus": "PUBLISHED"
+}
+
+
+==================================================
+17. TEST / HEALTH CHECK API
+==================================================
+
+--------------------------------------------------
+17.1 Root Health Check
+--------------------------------------------------
+
+Endpoint:
+GET /
+
+Response:
+eWaste Hub is running!
+
+
+--------------------------------------------------
+17.2 API Test
+--------------------------------------------------
+
+Endpoint:
+GET /api/test
+
+Response:
+API is working
+
+
+==================================================
+18. FULL API SUMMARY
+==================================================
+
+AUTH:
+
+POST /api/auth/register
+Register user
+
+POST /api/auth/login
+Login user
+
+GET /api/auth/me
+Get current authenticated user
+
+POST /api/auth/logout
+Logout user
+
+
+OWNER:
+
+POST /api/owner/devices
+Submit device
+
+GET /api/owner/devices
+List my devices
+
+GET /api/owner/devices/{id}
+Get my device by ID
+
+POST /api/owner/devices/{deviceId}/orders/data-retrieval
+Create data retrieval order
+
+GET /api/owner/orders
+List my orders
+
+GET /api/owner/orders/{orderId}
+Get my order
+
+GET /api/owner/orders/{orderId}/secure-link
+Get secure link
+
+POST /api/owner/orders/{orderId}/restore
+Restore order
+
+GET /api/owner/payments/providers
+List payment providers
+
+GET /api/owner/orders/{orderId}/payment-quote
+Get payment quote
+
+POST /api/owner/payments
+Create sandbox payment
+
+POST /api/owner/payments/simulate
+Simulate payment
+
+POST /api/owner/payments/{paymentId}/capture
+Forbidden for owner success confirmation
+
+POST /api/owner/payments/{paymentId}/cancel
+Cancel pending payment
+
+GET /api/owner/payments
+List my payments
+
+GET /api/owner/orders/{orderId}/payments
+List payments for my order
+
+
+STAFF:
+
+GET /api/staff/devices/unknown
+Get unknown device queue
+
+GET /api/staff/devices/hidden
+Get hidden / draft devices
+
+GET /api/staff/devices/recycle-processing
+Get recycle processing queue
+
+PUT /api/staff/devices/{id}
+Update device
+
+POST /api/staff/devices/{id}/reclassify
+Reclassify device
+
+POST /api/staff/devices/{id}/publish
+Publish device
+
+POST /api/staff/devices/{id}/hide
+Hide device
+
+POST /api/staff/devices/{id}/data-wipe/complete
+Mark data wipe complete
+
+GET /api/staff/devices/{id}/classification-result
+Get classification result
+
+PATCH /api/staff/devices/{id}/follow-up
+Update follow-up
+
+PUT /api/staff/devices/{id}/details
+Update device details
+
+PATCH /api/staff/devices/{id}/visibility
+Update device visibility
+
+POST /api/staff/devices/{deviceId}/data-erasure
+Create data erasure record
+
+GET /api/staff/devices/{deviceId}/data-erasure
+Get data erasure record
+
+PATCH /api/staff/devices/{deviceId}/data-erasure/status
+Update data erasure status
+
+GET /api/staff/orders
+List all orders
+
+POST /api/staff/orders/{orderId}/fulfill
+Fulfill order
+
+POST /api/staff/orders/{orderId}/delete-data
+Delete expired order data
+
+GET /api/staff/payments
+Search payments
+
+GET /api/staff/payments/{paymentId}
+Get payment by ID
+
+GET /api/staff/payments/order/{orderId}
+List payments for order
+
+POST /api/staff/payments/{paymentId}/capture
+Capture payment
+
+POST /api/staff/payments/{paymentId}/fail
+Fail payment
+
+POST /api/staff/payments/{paymentId}/refund
+Refund payment
+
+GET /api/staff/reports/referral-fees
+Get referral fee report
+
+GET /api/staff/reports/referral-fees/device/{deviceId}
+Get referral fees by device
+
+PATCH /api/staff/reports/referral-fees/{referralId}/status
+Update referral fee status
+
+
+ADMIN:
+
+GET /api/admin/devices
+Get all devices
+
+PUT /api/admin/device/{id}/classify
+Classify device
+
+GET /api/admin/dashboard
+Get dashboard statistics
+
+GET /api/admin/reports/device-processing
+Get device processing report
+
+GET /api/admin/users
+Get all users
+
+GET /api/admin/users/{id}
+Get user by ID
+
+PUT /api/admin/users/{id}/role
+Update user role
+
+PUT /api/admin/users/{id}/status
+Update user status
+
+GET /api/admin/payments
+Search all payments
+
+GET /api/admin/payments/{paymentId}
+Get payment by ID
+
+GET /api/admin/reports/payments
+Get payments report
+
+POST /api/admin/payments/{paymentId}/capture
+Capture payment
+
+POST /api/admin/payments/{paymentId}/fail
+Fail payment
+
+POST /api/admin/payments/{paymentId}/refund
+Refund payment
+
+
+QR:
+
+POST /api/qr/devices/{deviceId}/token
+Generate QR token
+
+GET /api/qr/{token}
+Resolve QR token
+
+
+LEGACY / TEST:
+
+POST /api/devices
+Legacy device submit
+
+GET /api/devices?userId={userId}
+Legacy list devices by user ID
+
+GET /api/test
+Test API
+
+GET /
+Root health check
+
+
+==================================================
+19. RECOMMENDED FRONTEND FLOWS
+==================================================
+
+Owner data retrieval flow:
+
+1. Owner login
+POST /api/auth/login
+
+2. Submit device
+POST /api/owner/devices
+
+3. Create data retrieval order
+POST /api/owner/devices/{deviceId}/orders/data-retrieval
+
+4. Get payment quote
+GET /api/owner/orders/{orderId}/payment-quote
+
+5. Create sandbox payment
+POST /api/owner/payments
+
+6. Staff or Admin confirms payment
+POST /api/staff/payments/{paymentId}/capture
+or
+POST /api/admin/payments/{paymentId}/capture
+
+7. Owner gets secure link
+GET /api/owner/orders/{orderId}/secure-link
+
+
+Staff device processing flow:
+
+1. View unknown queue
+GET /api/staff/devices/unknown
+
+2. View classification result
+GET /api/staff/devices/{id}/classification-result
+
+3. Update follow-up if needed
+PATCH /api/staff/devices/{id}/follow-up
+
+4. Reclassify device
+POST /api/staff/devices/{id}/reclassify
+
+5. Publish or hide device
+POST /api/staff/devices/{id}/publish
+POST /api/staff/devices/{id}/hide
+
+
+Payment security flow:
+
+Owner can:
+- create payment
+- view own payment
+- cancel own pending payment
+
+Owner cannot:
+- mark payment as SUCCEEDED
+- capture own payment as successful
+
+Staff/Admin must:
+- confirm payment success through capture endpoint
+
+Successful payment confirmation endpoints:
+POST /api/staff/payments/{paymentId}/capture
+POST /api/admin/payments/{paymentId}/capture
